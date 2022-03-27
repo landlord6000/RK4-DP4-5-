@@ -177,12 +177,13 @@ void RK4_one_step(double* y0, double* y1, Rfunc f, double tau, double t, long n)
     
 }
 
-double* RK4_step_var(double* U, double tau, double t0, double T, Rfunc f, Afunc fa, size_t n, double tol)    
+double* RK4_step_var(double* U, double tau0, double t0, double T, Rfunc f, Afunc fa, size_t n, double tol, double fac0, double facmin0, double facmax0)   
 {
 
     int i, j, s;
-	double  t = t0, error;
-    double fac, facmin, facmax;
+    double t = t0, error, sq;
+    double taumax = 0.5, tau = tau0;
+    double fac = fac0, facmin = facmin0, facmax = facmax0;
     double* y0 = new double[n];
     double* y01 = new double[n];
     double* y1 = new double[n];
@@ -193,6 +194,7 @@ double* RK4_step_var(double* U, double tau, double t0, double T, Rfunc f, Afunc 
     memcpy(y0, U, sizeof(double)*n);
 
 	std::ofstream RK4_dat("RK4.dat");
+    std::ofstream ZZZ("rk.dat", std::ios::app);
 
     RK4_dat << t << "   ";
 	for (j = 0; j < n; ++j)
@@ -233,13 +235,11 @@ double* RK4_step_var(double* U, double tau, double t0, double T, Rfunc f, Afunc 
             RK4_dat << tau << "   ";
             RK4_dat << "\n"; 
             info[1]++;   
-            facmax = 3;
+            facmax = facmax0;
         }
         else {
             facmax = 1;
         }
-        fac = 0.8;
-        facmin = 0.4;
 
         tau = tau * std::min(facmax, std::max(facmin, fac * pow((tol / error), 1 / 5.)));
 		info[0]++;
@@ -253,8 +253,10 @@ double* RK4_step_var(double* U, double tau, double t0, double T, Rfunc f, Afunc 
     }
     
     RK4_dat << info[0] << " " << info[0] - info[1] << " " << info[2];
-
+    ZZZ << tau0 << " " << fac0 << " " << facmin0 << " " << facmax0 << " "  << info[0] << " " << info[0] - info[1] << " " << info[2] << " ";
+    
 	RK4_dat.close();
+    ZZZ.close();
 
     delete[] info;
     delete[] d;
@@ -440,7 +442,7 @@ double* DormanPrince4_5(double* U, double tau0, double t0, double T, Rfunc f, Af
     memcpy(y0, U, sizeof(double)*n);
 
 	std::ofstream DP4_5("DP4_5.dat");
-    std::ofstream ZZZ("1.dat", std::ios::app);
+    std::ofstream ZZZ("dp.dat", std::ios::app);
 
     DP4_5 << t << "   ";
 	for (j = 0; j < n; ++j)
@@ -457,8 +459,6 @@ double* DormanPrince4_5(double* U, double tau0, double t0, double T, Rfunc f, Af
 	
 		error = DP4_one_step(y0, y1, f, tau, t, n, 0);   
         
-        // facmin = 0.4;
-        // fac = 0.8;
         if(error < tol) {
             t = t + tau;
             memcpy(y0, y1, sizeof(double)*n);
@@ -467,7 +467,7 @@ double* DormanPrince4_5(double* U, double tau0, double t0, double T, Rfunc f, Af
                 DP4_5 << y0[s] << "   ";
             DP4_5 << tau << "   ";
             DP4_5 << "\n"; 
-            facmax = 3;
+            facmax = facmax0;
             g = std::min(facmax, std::max(facmin, pow(fac*(tol/error), 0.2)));
             tau = std::min(g * tau, taumax);
             info[1]++;  

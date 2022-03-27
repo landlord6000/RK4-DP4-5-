@@ -9,7 +9,6 @@ int main(int argc, char* argv[])
 	double fac    = strtod(argv[2], NULL);
 	double facmin = strtod(argv[3], NULL);
 	double facmax = strtod(argv[4], NULL);
-	printf(" %lf %lf %lf %lf\n", tau, fac, facmin, facmax);
 
 	Rfunc f  = f1;              // функция правой части
     Afunc fa = fa1;             // аналитическое решение
@@ -18,25 +17,35 @@ int main(int argc, char* argv[])
 	int n = 2;                  // размерность задачи
     double* u = new double[n];  // массив с начальным приближением
 	double* info = new double[3];
-	clock_t time;
+	clock_t time_dp, time_rk;
    
 	double t0 = 0.3;           	// начальное время
 	double T = 4.3;            	// конечное время
-	double tol = 1e-4;
+	double tol = 1e-6;
 
     u[0] = fa1(t0, 0);           // начальные условия
     u[1] = fa1(t0, 1);
 
-	time = clock();
+	time_dp = clock();
 	info = DormanPrince4_5(u, tau, t0, T, f, fa, n, tol, fac, facmin, facmax);
-	// info = RK4_step_var(u, tau, t0, T, f, fa, n, tol);
-	time = clock() - time;
+	time_dp = clock() - time_dp;
 
-	printf("time = %lf\n", (double)time / CLOCKS_PER_SEC);
+	time_rk = clock();
+	info = RK4_step_var(u, tau, t0, T, f, fa, n, tol, fac, facmin, facmax);
+	time_rk = clock() - time_rk;
+	
 
-	std::ofstream ZZZ("2.dat", std::ios::app);
-	ZZZ << (double)time / CLOCKS_PER_SEC << "\n";
+	printf("time_rk = %lf\n", (double)time_rk / CLOCKS_PER_SEC);
+	printf("time_dp = %lf\n", (double)time_dp / CLOCKS_PER_SEC);
+
+	std::ofstream ZZZ("rk.dat", std::ios::app);
+	ZZZ << (double)time_rk / CLOCKS_PER_SEC << "\n";
 	ZZZ.close();
+
+	ZZZ.open("dp.dat", std::ios::app);
+	ZZZ << (double)time_dp / CLOCKS_PER_SEC << "\n";
+	ZZZ.close();
+
 
 	delete[] u;
 	delete[] info;
